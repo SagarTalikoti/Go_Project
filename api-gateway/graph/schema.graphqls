@@ -1,0 +1,28 @@
+type Task {
+  id: ID!
+  title: String!
+  description: String!
+  completed: Boolean!
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String!
+}
+
+type Query {
+  getTask(id: ID!): Task!
+  listTasks: [Task!]!
+  getUser(id: ID!): User!
+  listUsers: [User!]!
+}
+
+type Mutation {
+  createTask(title: String!, description: String!): Task!
+  updateTask(id: ID!, title: String!, description: String!, completed: Boolean!): Task!
+  deleteTask(id: ID!): Boolean!
+  createUser(username: String!, email: String!): User!
+  updateUser(id: ID!, username: String!, email: String!): User!
+  deleteUser(id: ID!): Boolean!
+}
