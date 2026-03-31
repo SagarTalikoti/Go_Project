@@ -212,7 +212,7 @@ type Mutation {
 The API Gateway enforces business logic across microservices. The strict workflow is:
 1. **Create a User** (Get a `user_id`)
 2. **Create an Order** (Requires a valid `user_id`)
-3. **Track an Order** (Requires a valid `order_id`)
+3. **Track an Order** (Requires a valid `order_id`. *Note: Updating the tracking automatically updates the Order's status synchronously!*)
 
 #### 1. Create a User
 ```graphql
@@ -241,11 +241,12 @@ mutation {
 ```
 
 #### 3. Update Tracking Status (Using the Order ID)
+> **Note:** The API gateway will sequentially update the Order's status in `order-service` before creating the tracking entry in `track-order-service`.
 ```graphql
 mutation {
   updateTrackingStatus(
     order_id: "order-1"
-    shipping_status: "SHIPPED"
+    shipping_status: "Delivered"
   ) {
     id
     order_id
@@ -254,7 +255,8 @@ mutation {
 }
 ```
 
-#### List All Orders
+#### 4. List All Orders to Verify Sync
+> **Result:** When you run this after step 3, the output for `status` will automatically reflect `"Delivered"` instead of `"CREATED"`!
 ```graphql
 query {
   listOrders {

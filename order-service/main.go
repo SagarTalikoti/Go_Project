@@ -32,6 +32,16 @@ func (s *server) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*
 	return &pb.OrderResponse{Order: order}, nil
 }
 
+func (s *server) UpdateOrderStatus(ctx context.Context, req *pb.UpdateOrderStatusRequest) (*pb.OrderResponse, error) {
+	for _, order := range s.orders {
+		if order.Id == req.Id {
+			order.Status = req.Status
+			return &pb.OrderResponse{Order: order}, nil
+		}
+	}
+	return nil, status.Errorf(codes.NotFound, "Order not found")
+}
+
 func (s *server) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.OrderResponse, error) {
 	for _, order := range s.orders {
 		if order.Id == req.Id {

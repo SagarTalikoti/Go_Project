@@ -44,10 +44,13 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, userID string, itemN
 
 // UpdateTrackingStatus is the resolver for the updateTrackingStatus field.
 func (r *mutationResolver) UpdateTrackingStatus(ctx context.Context, orderID string, shippingStatus string) (*model.TrackOrder, error) {
-	// Verify order exists first
-	_, err := r.OrderClient.GetOrder(ctx, &orderpb.GetOrderRequest{Id: orderID})
+	// Verify order exists first and update its status
+	_, err := r.OrderClient.UpdateOrderStatus(ctx, &orderpb.UpdateOrderStatusRequest{
+		Id:     orderID,
+		Status: shippingStatus,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("cannot update tracking: order not found: %v", err)
+		return nil, fmt.Errorf("cannot update tracking: order not found or failed to update: %v", err)
 	}
 
 	resp, err := r.TrackOrderClient.UpdateStatus(ctx, &trackorderpb.UpdateStatusRequest{
