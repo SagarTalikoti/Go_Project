@@ -210,38 +210,124 @@ type Mutation {
 
 #### Workflow Example: End-to-End
 The API Gateway enforces business logic across microservices. The strict workflow is:
-1. **Create a User** (Get a `user_id`)
-2. **Create an Order** (Requires a valid `user_id`)
-3. **Track an Order** (Requires a valid `order_id`. *Note: Updating the tracking automatically updates the Order's status synchronously!*)
+1. **Create a User** → get a `user_id`
+2. **Create an Order** → provide a valid `user_id`, get back an `order_id`
+3. **Update Tracking Status** → provide a valid `order_id` to sync status across both services
+4. **List All Orders** → see the order status updated to match the tracking status
 
-#### 1. Create a User
+---
+
+### 👤 User CRUD
+
+#### Create a User
 ```graphql
 mutation {
   createUser(username: "sagar", email: "sagar@example.com") {
     id
     username
+    email
   }
 }
 ```
 
-#### 2. Create an Order (Using the User ID)
+#### Get a Single User
+```graphql
+query {
+  getUser(id: "user-1") {
+    id
+    username
+    email
+  }
+}
+```
+
+#### List All Users
+```graphql
+query {
+  listUsers {
+    id
+    username
+    email
+  }
+}
+```
+
+#### Update a User
+```graphql
+mutation {
+  updateUser(id: "user-1", username: "sagar_updated", email: "sagar2@example.com") {
+    id
+    username
+    email
+  }
+}
+```
+
+#### Delete a User
+```graphql
+mutation {
+  deleteUser(id: "user-1")
+}
+```
+
+---
+
+### 📦 Order Operations
+
+#### Create an Order *(valid user_id required)*
 ```graphql
 mutation {
   createOrder(
-    user_id: "user-123"
+    user_id: "user-1"
     item_name: "Wireless Mouse"
     quantity: 2
     total_price: 39.98
   ) {
     id
+    user_id
     item_name
+    quantity
+    total_price
     status
   }
 }
 ```
 
-#### 3. Update Tracking Status (Using the Order ID)
-> **Note:** The API gateway will sequentially update the Order's status in `order-service` before creating the tracking entry in `track-order-service`.
+#### Get a Single Order
+```graphql
+query {
+  getOrder(id: "order-1") {
+    id
+    user_id
+    item_name
+    quantity
+    total_price
+    status
+  }
+}
+```
+
+#### List All Orders
+> **Result:** After updating tracking status, `status` here will automatically reflect the latest tracking value (e.g. `"Delivered"`).
+```graphql
+query {
+  listOrders {
+    id
+    user_id
+    item_name
+    quantity
+    total_price
+    status
+  }
+}
+```
+
+---
+
+### 🚚 Track Order Operations
+
+#### Update Tracking Status *(valid order_id required)*
+> **Note:** This simultaneously updates the Order's `status` field in `order-service`.
 ```graphql
 mutation {
   updateTrackingStatus(
@@ -255,16 +341,13 @@ mutation {
 }
 ```
 
-#### 4. List All Orders to Verify Sync
-> **Result:** When you run this after step 3, the output for `status` will automatically reflect `"Delivered"` instead of `"CREATED"`!
+#### Get Tracking Info for an Order
 ```graphql
 query {
-  listOrders {
+  getTrackingInfo(order_id: "order-1") {
     id
-    item_name
-    quantity
-    total_price
-    status
+    order_id
+    shipping_status
   }
 }
 ```
