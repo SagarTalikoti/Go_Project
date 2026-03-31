@@ -6,7 +6,8 @@ import (
 	"os"
 
 	"api-gateway/graph"
-	pb "task-service/proto"
+	orderpb "order-service/proto"
+	trackorderpb "track-order-service/proto"
 	userpb "user-service/proto"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -23,13 +24,19 @@ func main() {
 		port = defaultPort
 	}
 
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	orderConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("did not connect to task service: %v", err)
+		log.Fatalf("did not connect to order service: %v", err)
 	}
-	defer conn.Close()
+	defer orderConn.Close()
+	orderClient := orderpb.NewOrderServiceClient(orderConn)
 
-	client := pb.NewTaskServiceClient(conn)
+	trackOrderConn, err := grpc.NewClient("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect to track order service: %v", err)
+	}
+	defer trackOrderConn.Close()
+	trackOrderClient := trackorderpb.NewTrackOrderServiceClient(trackOrderConn)
 
 	userConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -38,7 +45,11 @@ func main() {
 	defer userConn.Close()
 	userClient := userpb.NewUserServiceClient(userConn)
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{TaskClient: client, UserClient: userClient}}))
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+		OrderClient:      orderClient,
+		TrackOrderClient: trackOrderClient,
+		UserClient:       userClient,
+	}}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)

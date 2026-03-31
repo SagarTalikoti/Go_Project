@@ -1,22 +1,24 @@
-# Task Management Microservices Project
+# E-commerce Microservices Project
 
-A modern microservices-based task management system built with Go, featuring gRPC communication and GraphQL API.
+A modern microservices-based e-commerce backend system built with Go, featuring gRPC communication and GraphQL API.
 
 ## 🏗️ Architecture Overview
 
-This project implements a **microservices architecture** with two main services:
+This project implements a **microservices architecture** with three main backend services interfacing through a single gateway:
 
-```
+```text
 ┌─────────────────┐    gRPC     ┌─────────────────┐
-│   API Gateway   │◄────────────┤  Task Service   │
+│   API Gateway   │◄────────────┤  Order Service  │
 │    (GraphQL)    │             │    (gRPC)       │
 │                 │             └─────────────────┘
-│ - GraphQL API   │
-│ - Request Routing│    gRPC     ┌─────────────────┐
-│ - Schema Validation│◄────────────┤  User Service   │
-└─────────────────┘             │    (gRPC)       │
-                                └─────────────────┘
-         │
+│                 │             ┌─────────────────┐
+│ - GraphQL API   │    gRPC     │Track Order Serv │
+│ - Request Route │◄────────────┤    (gRPC)       │
+│ - Schema Valid  │             └─────────────────┘
+│                 │             ┌─────────────────┐
+│                 │    gRPC     │  User Service   │
+└────────┬────────┘◄────────────┤    (gRPC)       │
+         │                      └─────────────────┘
          │ HTTP/GraphQL
          ▼
 ┌─────────────────┐
@@ -33,10 +35,15 @@ This project implements a **microservices architecture** with two main services:
 - Handles GraphQL schema and resolvers
 - Routes requests to appropriate services
 
-**Task Service (Port 50051):**
-- Implements business logic for task management
-- Provides gRPC endpoints for CRUD operations
-- Manages task data in memory
+**Order Service (Port 50053):**
+- Implements business logic for order management
+- Provides gRPC endpoints for Order CRUD operations
+- Manages order data in memory
+
+**Track Order Service (Port 50054):**
+- Implements business logic for tracking order shipments
+- Provides gRPC endpoints to get and update shipping status
+- Manages tracking data in memory
 
 **User Service (Port 50052):**
 - Implements business logic for user management
@@ -63,48 +70,45 @@ This project implements a **microservices architecture** with two main services:
 
 ## 📁 Project Structure
 
-```
+```text
 mini-project/
 ├── go.work                 # Go workspace configuration
-├── go.work.sum            # Workspace checksums
-├── api-gateway/           # GraphQL API Gateway Service
+├── go.work.sum             # Workspace checksums
+├── api-gateway/            # GraphQL API Gateway Service
 │   ├── go.mod
-│   ├── go.sum
-│   ├── server.go          # Main server entry point
+│   ├── server.go           # Main server entry point
 │   └── graph/
 │       ├── schema.graphqls        # GraphQL schema definition
 │       ├── schema.resolvers.go    # GraphQL resolvers
-│       ├── resolver.go           # Dependency injection
-│       ├── generated.go          # Auto-generated GraphQL code
+│       ├── resolver.go            # Dependency injection
+│       ├── generated.go           # Auto-generated GraphQL code
 │       └── model/
-│           └── models_gen.go     # Generated GraphQL models
-└── task-service/         # gRPC Task Management Service
+│           └── models_gen.go      # Generated GraphQL models
+├── order-service/          # gRPC Order Service
+│   ├── go.mod
+│   ├── main.go             # Main service entry point
+│   └── proto/
+│       ├── order.proto            # Protocol buffer definitions
+│       └── ...                    # Generated Go code
+├── track-order-service/    # gRPC Track Order Service
+│   ├── go.mod
+│   ├── main.go             # Main service entry point
+│   └── proto/
+│       ├── track_order.proto      # Protocol buffer definitions
+│       └── ...                    # Generated Go code
+└── user-service/           # gRPC User Service
     ├── go.mod
-    ├── go.sum
-    ├── main.go           # Main service entry point
+    ├── main.go             # Main service entry point
     └── proto/
-        ├── task.proto            # Protocol buffer definitions
-        ├── task.pb.go           # Generated protobuf code
-        ├── task_grpc.pb.go      # Generated gRPC code
-        └── protoc-bin/          # Protocol buffer compiler
-            ├── bin/
-            ├── include/
-            └── readme.txt
-└── user-service/         # gRPC User Management Service
-    ├── go.mod
-    ├── go.sum
-    ├── main.go           # Main service entry point
-    └── proto/
-        ├── user.proto            # Protocol buffer definitions
-        ├── user.pb.go           # Generated protobuf code
-        └── user_grpc.pb.go      # Generated gRPC code
+        ├── user.proto             # Protocol buffer definitions
+        └── ...                    # Generated Go code
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Go 1.25.1 or later
-- Protocol Buffer Compiler (included in project)
+- Protocol Buffer Compiler
 
 ### Installation & Setup
 
@@ -125,21 +129,27 @@ mini-project/
 
 ### Running the Services
 
-1. **Start the Task Service (gRPC):**
+You must run all 4 services concurrently. Open multiple terminal windows and run:
+
+1. **Start the Order Service (gRPC):**
    ```bash
-   cd task-service
+   cd order-service
    go run main.go
    ```
-   The service will start on `localhost:50051`
 
-2. **Start the User Service (gRPC):**
+2. **Start the Track Order Service (gRPC):**
+   ```bash
+   cd track-order-service
+   go run main.go
+   ```
+
+3. **Start the User Service (gRPC):**
    ```bash
    cd user-service
    go run main.go
    ```
-   The service will start on `localhost:50052`
 
-3. **Start the API Gateway (GraphQL):**
+4. **Start the API Gateway (GraphQL):**
    ```bash
    cd api-gateway
    go run server.go
@@ -152,11 +162,19 @@ mini-project/
 
 #### Types
 ```graphql
-type Task {
-  id: ID!           # Unique identifier
-  title: String!    # Task title
-  description: String!  # Task description
-  completed: Boolean!   # Completion status
+type Order {
+  id: ID!
+  user_id: String!
+  item_name: String!
+  quantity: Int!
+  total_price: Float!
+  status: String!
+}
+
+type TrackOrder {
+  id: ID!
+  order_id: String!
+  shipping_status: String!
 }
 
 type User {
@@ -168,132 +186,68 @@ type User {
 
 #### Queries
 ```graphql
-# Get a single task by ID
-getTask(id: ID!): Task!
-
-# Get all tasks
-listTasks: [Task!]!
-
-# Get a single user by ID
-getUser(id: ID!): User!
-
-# Get all users
-listUsers: [User!]!
+type Query {
+  getOrder(id: ID!): Order!
+  listOrders: [Order!]!
+  getTrackingInfo(order_id: String!): TrackOrder!
+  getUser(id: ID!): User!
+  listUsers: [User!]!
+}
 ```
 
 #### Mutations
 ```graphql
-# Create a new task
-createTask(title: String!, description: String!): Task!
-
-# Update an existing task
-updateTask(id: ID!, title: String!, description: String!, completed: Boolean!): Task!
-
-# Delete a task
-deleteTask(id: ID!): Boolean!
-
-# User operations
-createUser(username: String!, email: String!): User!
-updateUser(id: ID!, username: String!, email: String!): User!
-deleteUser(id: ID!): Boolean!
+type Mutation {
+  createOrder(user_id: String!, item_name: String!, quantity: Int!, total_price: Float!): Order!
+  updateTrackingStatus(order_id: String!, shipping_status: String!): TrackOrder!
+  createUser(username: String!, email: String!): User!
+  updateUser(id: ID!, username: String!, email: String!): User!
+  deleteUser(id: ID!): Boolean!
+}
 ```
 
 ### Example GraphQL Operations
 
-#### Create a Task
+#### Create an Order
 ```graphql
 mutation {
-  createTask(
-    title: "Learn Go Microservices"
-    description: "Study gRPC and GraphQL integration"
+  createOrder(
+    user_id: "user-123"
+    item_name: "Wireless Mouse"
+    quantity: 2
+    total_price: 39.98
   ) {
     id
-    title
-    description
-    completed
+    item_name
+    status
   }
 }
 ```
 
-#### List All Tasks
+#### Update Tracking Status
+```graphql
+mutation {
+  updateTrackingStatus(
+    order_id: "order-1"
+    shipping_status: "SHIPPED"
+  ) {
+    id
+    order_id
+    shipping_status
+  }
+}
+```
+
+#### List All Orders
 ```graphql
 query {
-  listTasks {
+  listOrders {
     id
-    title
-    description
-    completed
+    item_name
+    quantity
+    total_price
+    status
   }
-}
-```
-
-#### Update a Task
-```graphql
-mutation {
-  updateTask(
-    id: "task-id-here"
-    title: "Updated Title"
-    description: "Updated description"
-    completed: true
-  ) {
-    id
-    title
-    completed
-  }
-}
-```
-
-#### Delete a Task
-```graphql
-mutation {
-  deleteTask(id: "task-id-here")
-}
-```
-
-#### Create a User
-```graphql
-mutation {
-  createUser(
-    username: "johndoe"
-    email: "john@example.com"
-  ) {
-    id
-    username
-    email
-  }
-}
-```
-
-#### List All Users
-```graphql
-query {
-  listUsers {
-    id
-    username
-    email
-  }
-}
-```
-
-#### Update a User
-```graphql
-mutation {
-  updateUser(
-    id: "user-id-here"
-    username: "johndoe_updated"
-    email: "john_new@example.com"
-  ) {
-    id
-    username
-    email
-  }
-}
-```
-
-#### Delete a User
-```graphql
-mutation {
-  deleteUser(id: "user-id-here")
 }
 ```
 
@@ -309,22 +263,11 @@ go run github.com/99designs/gqlgen generate
 
 **Generate Protocol Buffer code:**
 ```bash
-cd task-service
-protoc --go_out=. --go-grpc_out=. proto/task.proto
-```
+cd order-service
+protoc --go_out=. --go-grpc_out=. proto/order.proto
 
-### Testing the APIs
-
-**Using GraphQL Playground:**
-1. Open `http://localhost:8080/` in your browser
-2. Use the interactive playground to test queries and mutations
-
-**Using curl:**
-```bash
-# List tasks
-curl -X POST http://localhost:8080/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query { listTasks { id title description completed } }"}'
+cd track-order-service
+protoc --go_out=. --go-grpc_out=. proto/track_order.proto
 ```
 
 ## 🏛️ Design Decisions
@@ -345,48 +288,16 @@ curl -X POST http://localhost:8080/query \
 - **Flexible Queries**: Clients request exactly what they need
 - **Single Endpoint**: One URL for all operations
 - **Strongly Typed**: Schema provides type safety
-- **Introspection**: API can be explored and documented automatically
 
 ### Why In-Memory Storage?
 - **Simplicity**: No database setup required for demo
 - **Speed**: Fast read/write operations
-- **Ephemeral**: Data resets on service restart (acceptable for demo)
-
-## 🔄 Data Flow
-
-1. **Client Request**: GraphQL query/mutation sent to API Gateway
-2. **Request Processing**: API Gateway validates and routes request
-3. **gRPC Call**: API Gateway calls Task Service via gRPC
-4. **Business Logic**: Task Service processes the request
-5. **Data Storage**: Task data stored in memory
-6. **Response**: Result flows back through gRPC → GraphQL → Client
 
 ## 🚀 Future Enhancements
-
 - **Database Integration**: Replace in-memory storage with PostgreSQL/MongoDB
 - **Authentication**: Add JWT-based authentication
-- **Logging**: Implement structured logging
-- **Monitoring**: Add metrics and health checks
+- **Logging/Monitoring**: Add structured logging and metrics
 - **Docker**: Containerize services
-- **Testing**: Add unit and integration tests
-- **Caching**: Implement Redis for performance
-- **Load Balancing**: Add service discovery and load balancing
-
-## 📝 Notes
-
-- This is a demonstration project showcasing microservices architecture
-- Data is stored in memory and will be lost on service restart
-- Services communicate via gRPC for type-safe, high-performance inter-service communication
-- GraphQL provides a flexible, client-driven API
-- The project demonstrates modern Go development practices with modules and workspaces
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
 
 ---
 

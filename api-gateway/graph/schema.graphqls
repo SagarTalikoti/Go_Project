@@ -1,8 +1,16 @@
-type Task {
+type Order {
   id: ID!
-  title: String!
-  description: String!
-  completed: Boolean!
+  user_id: String!
+  item_name: String!
+  quantity: Int!
+  total_price: Float!
+  status: String!
+}
+
+type TrackOrder {
+  id: ID!
+  order_id: String!
+  shipping_status: String!
 }
 
 type User {
@@ -12,16 +20,16 @@ type User {
 }
 
 type Query {
-  getTask(id: ID!): Task!
-  listTasks: [Task!]!
+  getOrder(id: ID!): Order!
+  listOrders: [Order!]!
+  getTrackingInfo(order_id: String!): TrackOrder!
   getUser(id: ID!): User!
   listUsers: [User!]!
 }
 
 type Mutation {
-  createTask(title: String!, description: String!): Task!
-  updateTask(id: ID!, title: String!, description: String!, completed: Boolean!): Task!
-  deleteTask(id: ID!): Boolean!
+  createOrder(user_id: String!, item_name: String!, quantity: Int!, total_price: Float!): Order!
+  updateTrackingStatus(order_id: String!, shipping_status: String!): TrackOrder!
   createUser(username: String!, email: String!): User!
   updateUser(id: ID!, username: String!, email: String!): User!
   deleteUser(id: ID!): Boolean!

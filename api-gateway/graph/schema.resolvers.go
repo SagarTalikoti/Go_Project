@@ -8,53 +8,47 @@ package graph
 import (
 	"api-gateway/graph/model"
 	"context"
-	pb "task-service/proto"
+
+	orderpb "order-service/proto"
+	trackorderpb "track-order-service/proto"
 	userpb "user-service/proto"
 )
 
-// CreateTask is the resolver for the createTask field.
-func (r *mutationResolver) CreateTask(ctx context.Context, title string, description string) (*model.Task, error) {
-	resp, err := r.TaskClient.CreateTask(ctx, &pb.CreateTaskRequest{
-		Title:       title,
-		Description: description,
+// CreateOrder is the resolver for the createOrder field.
+func (r *mutationResolver) CreateOrder(ctx context.Context, userID string, itemName string, quantity int, totalPrice float64) (*model.Order, error) {
+	resp, err := r.OrderClient.CreateOrder(ctx, &orderpb.CreateOrderRequest{
+		UserId:     userID,
+		ItemName:   itemName,
+		Quantity:   int32(quantity),
+		TotalPrice: float32(totalPrice),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &model.Task{
-		ID:          resp.Task.Id,
-		Title:       resp.Task.Title,
-		Description: resp.Task.Description,
-		Completed:   resp.Task.Completed,
+	return &model.Order{
+		ID:         resp.Order.Id,
+		UserID:     resp.Order.UserId,
+		ItemName:   resp.Order.ItemName,
+		Quantity:   int(resp.Order.Quantity),
+		TotalPrice: float64(resp.Order.TotalPrice),
+		Status:     resp.Order.Status,
 	}, nil
 }
 
-// UpdateTask is the resolver for the updateTask field.
-func (r *mutationResolver) UpdateTask(ctx context.Context, id string, title string, description string, completed bool) (*model.Task, error) {
-	resp, err := r.TaskClient.UpdateTask(ctx, &pb.UpdateTaskRequest{
-		Id:          id,
-		Title:       title,
-		Description: description,
-		Completed:   completed,
+// UpdateTrackingStatus is the resolver for the updateTrackingStatus field.
+func (r *mutationResolver) UpdateTrackingStatus(ctx context.Context, orderID string, shippingStatus string) (*model.TrackOrder, error) {
+	resp, err := r.TrackOrderClient.UpdateStatus(ctx, &trackorderpb.UpdateStatusRequest{
+		OrderId:        orderID,
+		ShippingStatus: shippingStatus,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &model.Task{
-		ID:          resp.Task.Id,
-		Title:       resp.Task.Title,
-		Description: resp.Task.Description,
-		Completed:   resp.Task.Completed,
+	return &model.TrackOrder{
+		ID:             resp.TrackOrder.Id,
+		OrderID:        resp.TrackOrder.OrderId,
+		ShippingStatus: resp.TrackOrder.ShippingStatus,
 	}, nil
-}
-
-// DeleteTask is the resolver for the deleteTask field.
-func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (bool, error) {
-	resp, err := r.TaskClient.DeleteTask(ctx, &pb.DeleteTaskRequest{Id: id})
-	if err != nil {
-		return false, err
-	}
-	return resp.Success, nil
 }
 
 // CreateUser is the resolver for the createUser field.
@@ -99,36 +93,53 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 	return resp.Success, nil
 }
 
-// GetTask is the resolver for the getTask field.
-func (r *queryResolver) GetTask(ctx context.Context, id string) (*model.Task, error) {
-	resp, err := r.TaskClient.GetTask(ctx, &pb.GetTaskRequest{Id: id})
+// GetOrder is the resolver for the getOrder field.
+func (r *queryResolver) GetOrder(ctx context.Context, id string) (*model.Order, error) {
+	resp, err := r.OrderClient.GetOrder(ctx, &orderpb.GetOrderRequest{Id: id})
 	if err != nil {
 		return nil, err
 	}
-	return &model.Task{
-		ID:          resp.Task.Id,
-		Title:       resp.Task.Title,
-		Description: resp.Task.Description,
-		Completed:   resp.Task.Completed,
+	return &model.Order{
+		ID:         resp.Order.Id,
+		UserID:     resp.Order.UserId,
+		ItemName:   resp.Order.ItemName,
+		Quantity:   int(resp.Order.Quantity),
+		TotalPrice: float64(resp.Order.TotalPrice),
+		Status:     resp.Order.Status,
 	}, nil
 }
 
-// ListTasks is the resolver for the listTasks field.
-func (r *queryResolver) ListTasks(ctx context.Context) ([]*model.Task, error) {
-	resp, err := r.TaskClient.ListTasks(ctx, &pb.ListTasksRequest{})
+// ListOrders is the resolver for the listOrders field.
+func (r *queryResolver) ListOrders(ctx context.Context) ([]*model.Order, error) {
+	resp, err := r.OrderClient.ListOrders(ctx, &orderpb.ListOrdersRequest{})
 	if err != nil {
 		return nil, err
 	}
-	var tasks []*model.Task
-	for _, task := range resp.Tasks {
-		tasks = append(tasks, &model.Task{
-			ID:          task.Id,
-			Title:       task.Title,
-			Description: task.Description,
-			Completed:   task.Completed,
+	var orders []*model.Order
+	for _, order := range resp.Orders {
+		orders = append(orders, &model.Order{
+			ID:         order.Id,
+			UserID:     order.UserId,
+			ItemName:   order.ItemName,
+			Quantity:   int(order.Quantity),
+			TotalPrice: float64(order.TotalPrice),
+			Status:     order.Status,
 		})
 	}
-	return tasks, nil
+	return orders, nil
+}
+
+// GetTrackingInfo is the resolver for the getTrackingInfo field.
+func (r *queryResolver) GetTrackingInfo(ctx context.Context, orderID string) (*model.TrackOrder, error) {
+	resp, err := r.TrackOrderClient.GetTrackingInfo(ctx, &trackorderpb.GetTrackingInfoRequest{OrderId: orderID})
+	if err != nil {
+		return nil, err
+	}
+	return &model.TrackOrder{
+		ID:             resp.TrackOrder.Id,
+		OrderID:        resp.TrackOrder.OrderId,
+		ShippingStatus: resp.TrackOrder.ShippingStatus,
+	}, nil
 }
 
 // GetUser is the resolver for the getUser field.

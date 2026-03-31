@@ -37,26 +37,34 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CreateTask func(childComplexity int, title string, description string) int
-		CreateUser func(childComplexity int, username string, email string) int
-		DeleteTask func(childComplexity int, id string) int
-		DeleteUser func(childComplexity int, id string) int
-		UpdateTask func(childComplexity int, id string, title string, description string, completed bool) int
-		UpdateUser func(childComplexity int, id string, username string, email string) int
+		CreateOrder          func(childComplexity int, userID string, itemName string, quantity int, totalPrice float64) int
+		CreateUser           func(childComplexity int, username string, email string) int
+		DeleteUser           func(childComplexity int, id string) int
+		UpdateTrackingStatus func(childComplexity int, orderID string, shippingStatus string) int
+		UpdateUser           func(childComplexity int, id string, username string, email string) int
+	}
+
+	Order struct {
+		ID         func(childComplexity int) int
+		ItemName   func(childComplexity int) int
+		Quantity   func(childComplexity int) int
+		Status     func(childComplexity int) int
+		TotalPrice func(childComplexity int) int
+		UserID     func(childComplexity int) int
 	}
 
 	Query struct {
-		GetTask   func(childComplexity int, id string) int
-		GetUser   func(childComplexity int, id string) int
-		ListTasks func(childComplexity int) int
-		ListUsers func(childComplexity int) int
+		GetOrder        func(childComplexity int, id string) int
+		GetTrackingInfo func(childComplexity int, orderID string) int
+		GetUser         func(childComplexity int, id string) int
+		ListOrders      func(childComplexity int) int
+		ListUsers       func(childComplexity int) int
 	}
 
-	Task struct {
-		Completed   func(childComplexity int) int
-		Description func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Title       func(childComplexity int) int
+	TrackOrder struct {
+		ID             func(childComplexity int) int
+		OrderID        func(childComplexity int) int
+		ShippingStatus func(childComplexity int) int
 	}
 
 	User struct {
@@ -67,16 +75,16 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateTask(ctx context.Context, title string, description string) (*model.Task, error)
-	UpdateTask(ctx context.Context, id string, title string, description string, completed bool) (*model.Task, error)
-	DeleteTask(ctx context.Context, id string) (bool, error)
+	CreateOrder(ctx context.Context, userID string, itemName string, quantity int, totalPrice float64) (*model.Order, error)
+	UpdateTrackingStatus(ctx context.Context, orderID string, shippingStatus string) (*model.TrackOrder, error)
 	CreateUser(ctx context.Context, username string, email string) (*model.User, error)
 	UpdateUser(ctx context.Context, id string, username string, email string) (*model.User, error)
 	DeleteUser(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
-	GetTask(ctx context.Context, id string) (*model.Task, error)
-	ListTasks(ctx context.Context) ([]*model.Task, error)
+	GetOrder(ctx context.Context, id string) (*model.Order, error)
+	ListOrders(ctx context.Context) ([]*model.Order, error)
+	GetTrackingInfo(ctx context.Context, orderID string) (*model.TrackOrder, error)
 	GetUser(ctx context.Context, id string) (*model.User, error)
 	ListUsers(ctx context.Context) ([]*model.User, error)
 }
@@ -95,17 +103,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Mutation.createTask":
-		if e.ComplexityRoot.Mutation.CreateTask == nil {
+	case "Mutation.createOrder":
+		if e.ComplexityRoot.Mutation.CreateOrder == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createTask_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_createOrder_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.CreateTask(childComplexity, args["title"].(string), args["description"].(string)), true
+		return e.ComplexityRoot.Mutation.CreateOrder(childComplexity, args["user_id"].(string), args["item_name"].(string), args["quantity"].(int), args["total_price"].(float64)), true
 	case "Mutation.createUser":
 		if e.ComplexityRoot.Mutation.CreateUser == nil {
 			break
@@ -117,17 +125,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateUser(childComplexity, args["username"].(string), args["email"].(string)), true
-	case "Mutation.deleteTask":
-		if e.ComplexityRoot.Mutation.DeleteTask == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteTask_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.DeleteTask(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteUser":
 		if e.ComplexityRoot.Mutation.DeleteUser == nil {
 			break
@@ -139,17 +136,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteUser(childComplexity, args["id"].(string)), true
-	case "Mutation.updateTask":
-		if e.ComplexityRoot.Mutation.UpdateTask == nil {
+	case "Mutation.updateTrackingStatus":
+		if e.ComplexityRoot.Mutation.UpdateTrackingStatus == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateTask_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_updateTrackingStatus_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.UpdateTask(childComplexity, args["id"].(string), args["title"].(string), args["description"].(string), args["completed"].(bool)), true
+		return e.ComplexityRoot.Mutation.UpdateTrackingStatus(childComplexity, args["order_id"].(string), args["shipping_status"].(string)), true
 	case "Mutation.updateUser":
 		if e.ComplexityRoot.Mutation.UpdateUser == nil {
 			break
@@ -162,17 +159,65 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.UpdateUser(childComplexity, args["id"].(string), args["username"].(string), args["email"].(string)), true
 
-	case "Query.getTask":
-		if e.ComplexityRoot.Query.GetTask == nil {
+	case "Order.id":
+		if e.ComplexityRoot.Order.ID == nil {
 			break
 		}
 
-		args, err := ec.field_Query_getTask_args(ctx, rawArgs)
+		return e.ComplexityRoot.Order.ID(childComplexity), true
+	case "Order.item_name":
+		if e.ComplexityRoot.Order.ItemName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Order.ItemName(childComplexity), true
+	case "Order.quantity":
+		if e.ComplexityRoot.Order.Quantity == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Order.Quantity(childComplexity), true
+	case "Order.status":
+		if e.ComplexityRoot.Order.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Order.Status(childComplexity), true
+	case "Order.total_price":
+		if e.ComplexityRoot.Order.TotalPrice == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Order.TotalPrice(childComplexity), true
+	case "Order.user_id":
+		if e.ComplexityRoot.Order.UserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Order.UserID(childComplexity), true
+
+	case "Query.getOrder":
+		if e.ComplexityRoot.Query.GetOrder == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getOrder_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.GetTask(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Query.GetOrder(childComplexity, args["id"].(string)), true
+	case "Query.getTrackingInfo":
+		if e.ComplexityRoot.Query.GetTrackingInfo == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getTrackingInfo_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.GetTrackingInfo(childComplexity, args["order_id"].(string)), true
 	case "Query.getUser":
 		if e.ComplexityRoot.Query.GetUser == nil {
 			break
@@ -185,12 +230,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.GetUser(childComplexity, args["id"].(string)), true
 
-	case "Query.listTasks":
-		if e.ComplexityRoot.Query.ListTasks == nil {
+	case "Query.listOrders":
+		if e.ComplexityRoot.Query.ListOrders == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Query.ListTasks(childComplexity), true
+		return e.ComplexityRoot.Query.ListOrders(childComplexity), true
 	case "Query.listUsers":
 		if e.ComplexityRoot.Query.ListUsers == nil {
 			break
@@ -198,30 +243,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.ListUsers(childComplexity), true
 
-	case "Task.completed":
-		if e.ComplexityRoot.Task.Completed == nil {
+	case "TrackOrder.id":
+		if e.ComplexityRoot.TrackOrder.ID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Task.Completed(childComplexity), true
-	case "Task.description":
-		if e.ComplexityRoot.Task.Description == nil {
+		return e.ComplexityRoot.TrackOrder.ID(childComplexity), true
+	case "TrackOrder.order_id":
+		if e.ComplexityRoot.TrackOrder.OrderID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Task.Description(childComplexity), true
-	case "Task.id":
-		if e.ComplexityRoot.Task.ID == nil {
+		return e.ComplexityRoot.TrackOrder.OrderID(childComplexity), true
+	case "TrackOrder.shipping_status":
+		if e.ComplexityRoot.TrackOrder.ShippingStatus == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Task.ID(childComplexity), true
-	case "Task.title":
-		if e.ComplexityRoot.Task.Title == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Task.Title(childComplexity), true
+		return e.ComplexityRoot.TrackOrder.ShippingStatus(childComplexity), true
 
 	case "User.email":
 		if e.ComplexityRoot.User.Email == nil {
@@ -343,19 +382,29 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_createTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_createOrder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "title", ec.unmarshalNString2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "user_id", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["title"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "description", ec.unmarshalNString2string)
+	args["user_id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "item_name", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["description"] = arg1
+	args["item_name"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "quantity", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["quantity"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "total_price", ec.unmarshalNFloat2float64)
+	if err != nil {
+		return nil, err
+	}
+	args["total_price"] = arg3
 	return args, nil
 }
 
@@ -375,17 +424,6 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
-	if err != nil {
-		return nil, err
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -397,29 +435,19 @@ func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_updateTrackingStatus_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "order_id", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["id"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "title", ec.unmarshalNString2string)
+	args["order_id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "shipping_status", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["title"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "description", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["description"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "completed", ec.unmarshalNBoolean2bool)
-	if err != nil {
-		return nil, err
-	}
-	args["completed"] = arg3
+	args["shipping_status"] = arg1
 	return args, nil
 }
 
@@ -455,7 +483,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_getTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_getOrder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
@@ -463,6 +491,17 @@ func (ec *executionContext) field_Query_getTask_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getTrackingInfo_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "order_id", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["order_id"] = arg0
 	return args, nil
 }
 
@@ -529,24 +568,24 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Mutation_createTask(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_createOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Mutation_createTask,
+		ec.fieldContext_Mutation_createOrder,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CreateTask(ctx, fc.Args["title"].(string), fc.Args["description"].(string))
+			return ec.Resolvers.Mutation().CreateOrder(ctx, fc.Args["user_id"].(string), fc.Args["item_name"].(string), fc.Args["quantity"].(int), fc.Args["total_price"].(float64))
 		},
 		nil,
-		ec.marshalNTask2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTask,
+		ec.marshalNOrder2ᚖapiᚑgatewayᚋgraphᚋmodelᚐOrder,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_createOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -555,15 +594,19 @@ func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Task_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Task_title(ctx, field)
-			case "description":
-				return ec.fieldContext_Task_description(ctx, field)
-			case "completed":
-				return ec.fieldContext_Task_completed(ctx, field)
+				return ec.fieldContext_Order_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_Order_user_id(ctx, field)
+			case "item_name":
+				return ec.fieldContext_Order_item_name(ctx, field)
+			case "quantity":
+				return ec.fieldContext_Order_quantity(ctx, field)
+			case "total_price":
+				return ec.fieldContext_Order_total_price(ctx, field)
+			case "status":
+				return ec.fieldContext_Order_status(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
 	}
 	defer func() {
@@ -573,31 +616,31 @@ func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_createOrder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_updateTask(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_updateTrackingStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Mutation_updateTask,
+		ec.fieldContext_Mutation_updateTrackingStatus,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().UpdateTask(ctx, fc.Args["id"].(string), fc.Args["title"].(string), fc.Args["description"].(string), fc.Args["completed"].(bool))
+			return ec.Resolvers.Mutation().UpdateTrackingStatus(ctx, fc.Args["order_id"].(string), fc.Args["shipping_status"].(string))
 		},
 		nil,
-		ec.marshalNTask2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTask,
+		ec.marshalNTrackOrder2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTrackOrder,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Mutation_updateTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_updateTrackingStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -606,15 +649,13 @@ func (ec *executionContext) fieldContext_Mutation_updateTask(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Task_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Task_title(ctx, field)
-			case "description":
-				return ec.fieldContext_Task_description(ctx, field)
-			case "completed":
-				return ec.fieldContext_Task_completed(ctx, field)
+				return ec.fieldContext_TrackOrder_id(ctx, field)
+			case "order_id":
+				return ec.fieldContext_TrackOrder_order_id(ctx, field)
+			case "shipping_status":
+				return ec.fieldContext_TrackOrder_shipping_status(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TrackOrder", field.Name)
 		},
 	}
 	defer func() {
@@ -624,48 +665,7 @@ func (ec *executionContext) fieldContext_Mutation_updateTask(ctx context.Context
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_deleteTask(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_deleteTask,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().DeleteTask(ctx, fc.Args["id"].(string))
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_deleteTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_deleteTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_updateTrackingStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -811,24 +811,198 @@ func (ec *executionContext) fieldContext_Mutation_deleteUser(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getTask(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_getTask,
+		ec.fieldContext_Order_id,
 		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().GetTask(ctx, fc.Args["id"].(string))
+			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNTask2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTask,
+		ec.marshalNID2string,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_getTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Order_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_user_id(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Order_user_id,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Order_user_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_item_name(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Order_item_name,
+		func(ctx context.Context) (any, error) {
+			return obj.ItemName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Order_item_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_quantity(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Order_quantity,
+		func(ctx context.Context) (any, error) {
+			return obj.Quantity, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Order_quantity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_total_price(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Order_total_price,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPrice, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Order_total_price(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_status(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Order_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Order_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getOrder,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().GetOrder(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		ec.marshalNOrder2ᚖapiᚑgatewayᚋgraphᚋmodelᚐOrder,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -837,15 +1011,19 @@ func (ec *executionContext) fieldContext_Query_getTask(ctx context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Task_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Task_title(ctx, field)
-			case "description":
-				return ec.fieldContext_Task_description(ctx, field)
-			case "completed":
-				return ec.fieldContext_Task_completed(ctx, field)
+				return ec.fieldContext_Order_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_Order_user_id(ctx, field)
+			case "item_name":
+				return ec.fieldContext_Order_item_name(ctx, field)
+			case "quantity":
+				return ec.fieldContext_Order_quantity(ctx, field)
+			case "total_price":
+				return ec.fieldContext_Order_total_price(ctx, field)
+			case "status":
+				return ec.fieldContext_Order_status(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
 	}
 	defer func() {
@@ -855,30 +1033,30 @@ func (ec *executionContext) fieldContext_Query_getTask(ctx context.Context, fiel
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getOrder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_listTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_listOrders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_listTasks,
+		ec.fieldContext_Query_listOrders,
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().ListTasks(ctx)
+			return ec.Resolvers.Query().ListOrders(ctx)
 		},
 		nil,
-		ec.marshalNTask2ᚕᚖapiᚑgatewayᚋgraphᚋmodelᚐTaskᚄ,
+		ec.marshalNOrder2ᚕᚖapiᚑgatewayᚋgraphᚋmodelᚐOrderᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_listTasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_listOrders(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -887,16 +1065,69 @@ func (ec *executionContext) fieldContext_Query_listTasks(_ context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Task_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Task_title(ctx, field)
-			case "description":
-				return ec.fieldContext_Task_description(ctx, field)
-			case "completed":
-				return ec.fieldContext_Task_completed(ctx, field)
+				return ec.fieldContext_Order_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_Order_user_id(ctx, field)
+			case "item_name":
+				return ec.fieldContext_Order_item_name(ctx, field)
+			case "quantity":
+				return ec.fieldContext_Order_quantity(ctx, field)
+			case "total_price":
+				return ec.fieldContext_Order_total_price(ctx, field)
+			case "status":
+				return ec.fieldContext_Order_status(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getTrackingInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getTrackingInfo,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().GetTrackingInfo(ctx, fc.Args["order_id"].(string))
+		},
+		nil,
+		ec.marshalNTrackOrder2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTrackOrder,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getTrackingInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TrackOrder_id(ctx, field)
+			case "order_id":
+				return ec.fieldContext_TrackOrder_order_id(ctx, field)
+			case "shipping_status":
+				return ec.fieldContext_TrackOrder_shipping_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TrackOrder", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getTrackingInfo_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -1095,12 +1326,12 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Task_id(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+func (ec *executionContext) _TrackOrder_id(ctx context.Context, field graphql.CollectedField, obj *model.TrackOrder) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Task_id,
+		ec.fieldContext_TrackOrder_id,
 		func(ctx context.Context) (any, error) {
 			return obj.ID, nil
 		},
@@ -1111,9 +1342,9 @@ func (ec *executionContext) _Task_id(ctx context.Context, field graphql.Collecte
 	)
 }
 
-func (ec *executionContext) fieldContext_Task_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TrackOrder_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Task",
+		Object:     "TrackOrder",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1124,14 +1355,14 @@ func (ec *executionContext) fieldContext_Task_id(_ context.Context, field graphq
 	return fc, nil
 }
 
-func (ec *executionContext) _Task_title(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+func (ec *executionContext) _TrackOrder_order_id(ctx context.Context, field graphql.CollectedField, obj *model.TrackOrder) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Task_title,
+		ec.fieldContext_TrackOrder_order_id,
 		func(ctx context.Context) (any, error) {
-			return obj.Title, nil
+			return obj.OrderID, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -1140,9 +1371,9 @@ func (ec *executionContext) _Task_title(ctx context.Context, field graphql.Colle
 	)
 }
 
-func (ec *executionContext) fieldContext_Task_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TrackOrder_order_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Task",
+		Object:     "TrackOrder",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1153,14 +1384,14 @@ func (ec *executionContext) fieldContext_Task_title(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Task_description(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+func (ec *executionContext) _TrackOrder_shipping_status(ctx context.Context, field graphql.CollectedField, obj *model.TrackOrder) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Task_description,
+		ec.fieldContext_TrackOrder_shipping_status,
 		func(ctx context.Context) (any, error) {
-			return obj.Description, nil
+			return obj.ShippingStatus, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -1169,43 +1400,14 @@ func (ec *executionContext) _Task_description(ctx context.Context, field graphql
 	)
 }
 
-func (ec *executionContext) fieldContext_Task_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TrackOrder_shipping_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Task",
+		Object:     "TrackOrder",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Task_completed(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Task_completed,
-		func(ctx context.Context) (any, error) {
-			return obj.Completed, nil
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Task_completed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Task",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2771,23 +2973,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createTask":
+		case "createOrder":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createTask(ctx, field)
+				return ec._Mutation_createOrder(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "updateTask":
+		case "updateTrackingStatus":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateTask(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deleteTask":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_deleteTask(ctx, field)
+				return ec._Mutation_updateTrackingStatus(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -2836,6 +3031,70 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var orderImplementors = []string{"Order"}
+
+func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *model.Order) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Order")
+		case "id":
+			out.Values[i] = ec._Order_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "user_id":
+			out.Values[i] = ec._Order_user_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "item_name":
+			out.Values[i] = ec._Order_item_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "quantity":
+			out.Values[i] = ec._Order_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "total_price":
+			out.Values[i] = ec._Order_total_price(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._Order_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2855,7 +3114,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "getTask":
+		case "getOrder":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2864,7 +3123,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getTask(ctx, field)
+				res = ec._Query_getOrder(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -2877,7 +3136,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "listTasks":
+		case "listOrders":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2886,7 +3145,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_listTasks(ctx, field)
+				res = ec._Query_listOrders(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getTrackingInfo":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getTrackingInfo(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -2974,34 +3255,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var taskImplementors = []string{"Task"}
+var trackOrderImplementors = []string{"TrackOrder"}
 
-func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj *model.Task) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, taskImplementors)
+func (ec *executionContext) _TrackOrder(ctx context.Context, sel ast.SelectionSet, obj *model.TrackOrder) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, trackOrderImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Task")
+			out.Values[i] = graphql.MarshalString("TrackOrder")
 		case "id":
-			out.Values[i] = ec._Task_id(ctx, field, obj)
+			out.Values[i] = ec._TrackOrder_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "title":
-			out.Values[i] = ec._Task_title(ctx, field, obj)
+		case "order_id":
+			out.Values[i] = ec._TrackOrder_order_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "description":
-			out.Values[i] = ec._Task_description(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "completed":
-			out.Values[i] = ec._Task_completed(ctx, field, obj)
+		case "shipping_status":
+			out.Values[i] = ec._TrackOrder_shipping_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -3428,6 +3704,22 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3442,6 +3734,52 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNOrder2apiᚑgatewayᚋgraphᚋmodelᚐOrder(ctx context.Context, sel ast.SelectionSet, v model.Order) graphql.Marshaler {
+	return ec._Order(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOrder2ᚕᚖapiᚑgatewayᚋgraphᚋmodelᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Order) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNOrder2ᚖapiᚑgatewayᚋgraphᚋmodelᚐOrder(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNOrder2ᚖapiᚑgatewayᚋgraphᚋmodelᚐOrder(ctx context.Context, sel ast.SelectionSet, v *model.Order) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Order(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
@@ -3460,34 +3798,18 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNTask2apiᚑgatewayᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v model.Task) graphql.Marshaler {
-	return ec._Task(ctx, sel, &v)
+func (ec *executionContext) marshalNTrackOrder2apiᚑgatewayᚋgraphᚋmodelᚐTrackOrder(ctx context.Context, sel ast.SelectionSet, v model.TrackOrder) graphql.Marshaler {
+	return ec._TrackOrder(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTask2ᚕᚖapiᚑgatewayᚋgraphᚋmodelᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Task) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNTask2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTask(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNTask2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v *model.Task) graphql.Marshaler {
+func (ec *executionContext) marshalNTrackOrder2ᚖapiᚑgatewayᚋgraphᚋmodelᚐTrackOrder(ctx context.Context, sel ast.SelectionSet, v *model.TrackOrder) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._Task(ctx, sel, v)
+	return ec._TrackOrder(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUser2apiᚑgatewayᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {

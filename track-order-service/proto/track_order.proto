@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package track_order;
+
+option go_package = "track-order-service/proto";
+
+service TrackOrderService {
+    rpc UpdateStatus (UpdateStatusRequest) returns (TrackOrderResponse);
+    rpc GetTrackingInfo (GetTrackingInfoRequest) returns (TrackOrderResponse);
+}
+
+message TrackOrder {
+    string id = 1;
+    string order_id = 2;
+    string shipping_status = 3;
+}
+
+message UpdateStatusRequest {
+    string order_id = 1;
+    string shipping_status = 2;
+}
+
+message GetTrackingInfoRequest {
+    string order_id = 1;
+}
+
+message TrackOrderResponse {
+    TrackOrder track_order = 1;
+}

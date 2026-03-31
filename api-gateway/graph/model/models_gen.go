@@ -5,14 +5,22 @@ package model
 type Mutation struct {
 }
 
+type Order struct {
+	ID         string  `json:"id"`
+	UserID     string  `json:"user_id"`
+	ItemName   string  `json:"item_name"`
+	Quantity   int     `json:"quantity"`
+	TotalPrice float64 `json:"total_price"`
+	Status     string  `json:"status"`
+}
+
 type Query struct {
 }
 
-type Task struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Completed   bool   `json:"completed"`
+type TrackOrder struct {
+	ID             string `json:"id"`
+	OrderID        string `json:"order_id"`
+	ShippingStatus string `json:"shipping_status"`
 }
 
 type User struct {

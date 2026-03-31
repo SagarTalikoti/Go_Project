@@ -1,7 +1,8 @@
 package graph
 
 import (
-	pb "task-service/proto"
+	orderpb "order-service/proto"
+	trackorderpb "track-order-service/proto"
 	userpb "user-service/proto"
 )
 
@@ -11,6 +12,7 @@ import (
 // here.
 
 type Resolver struct {
-	TaskClient pb.TaskServiceClient
-	UserClient userpb.UserServiceClient
+	OrderClient      orderpb.OrderServiceClient
+	TrackOrderClient trackorderpb.TrackOrderServiceClient
+	UserClient       userpb.UserServiceClient
 }
