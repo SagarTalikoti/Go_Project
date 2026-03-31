@@ -208,7 +208,23 @@ type Mutation {
 
 ### Example GraphQL Operations
 
-#### Create an Order
+#### Workflow Example: End-to-End
+The API Gateway enforces business logic across microservices. The strict workflow is:
+1. **Create a User** (Get a `user_id`)
+2. **Create an Order** (Requires a valid `user_id`)
+3. **Track an Order** (Requires a valid `order_id`)
+
+#### 1. Create a User
+```graphql
+mutation {
+  createUser(username: "sagar", email: "sagar@example.com") {
+    id
+    username
+  }
+}
+```
+
+#### 2. Create an Order (Using the User ID)
 ```graphql
 mutation {
   createOrder(
@@ -224,7 +240,7 @@ mutation {
 }
 ```
 
-#### Update Tracking Status
+#### 3. Update Tracking Status (Using the Order ID)
 ```graphql
 mutation {
   updateTrackingStatus(

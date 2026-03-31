@@ -8,6 +8,7 @@ package graph
 import (
 	"api-gateway/graph/model"
 	"context"
+	"fmt"
 
 	orderpb "order-service/proto"
 	trackorderpb "track-order-service/proto"
@@ -16,6 +17,12 @@ import (
 
 // CreateOrder is the resolver for the createOrder field.
 func (r *mutationResolver) CreateOrder(ctx context.Context, userID string, itemName string, quantity int, totalPrice float64) (*model.Order, error) {
+	// Verify user exists first
+	_, err := r.UserClient.GetUser(ctx, &userpb.GetUserRequest{Id: userID})
+	if err != nil {
+		return nil, fmt.Errorf("cannot create order: user not found: %v", err)
+	}
+
 	resp, err := r.OrderClient.CreateOrder(ctx, &orderpb.CreateOrderRequest{
 		UserId:     userID,
 		ItemName:   itemName,
@@ -37,6 +44,12 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, userID string, itemN
 
 // UpdateTrackingStatus is the resolver for the updateTrackingStatus field.
 func (r *mutationResolver) UpdateTrackingStatus(ctx context.Context, orderID string, shippingStatus string) (*model.TrackOrder, error) {
+	// Verify order exists first
+	_, err := r.OrderClient.GetOrder(ctx, &orderpb.GetOrderRequest{Id: orderID})
+	if err != nil {
+		return nil, fmt.Errorf("cannot update tracking: order not found: %v", err)
+	}
+
 	resp, err := r.TrackOrderClient.UpdateStatus(ctx, &trackorderpb.UpdateStatusRequest{
 		OrderId:        orderID,
 		ShippingStatus: shippingStatus,
